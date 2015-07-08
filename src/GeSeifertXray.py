@@ -49,7 +49,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         
         ### Override base class post-processing method pollInstrumentSpecific ###
         def pollInstrumentSpecific(self): 
-            '''Perform post-processing od data coming from queries'''
+            '''Perform post-processing of queried data'''
             try:
                 '''Current setpoint is returned in uA, convert to mA'''
                 currentInmA = self.get("current.setpoint") / 1000
@@ -90,8 +90,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 sw6 = self.get("statusWord6")
                 sw6Bin = bin(sw6)
                 self.set("statusWord6Bin",sw6Bin)
-                
-                
+                                
             except:
                 raise
             
@@ -135,11 +134,12 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias("SC:{current.setpoint};;CN;*{current.setpoint:d};") 
                 .displayedName("Current Setpoint [mA]")
-                .description("The target value of the current. Command format is xx, adhere typing 05 not 5.")
+                .description("The target value of the current. "
+                "Command format is xx, adhere typing 05 not 5.")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(80)
                 .unit(Unit.AMPERE)
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
                 
@@ -157,16 +157,17 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .displayedName("Voltage Setpoint")
                 .commit(),
        
-         # NOTE: this value is returned in Volts and has to be converted to kV (Andrea)
+         # NOTE: this value is returned in Volts and has to be converted to kV
         INT32_ELEMENT(expected).key("voltage.setpoint")
                 .tags("scpi poll")
                 .alias("SV:{voltage.setpoint};;VN;*{voltage.setpoint:d};")
                 .displayedName("Voltage Setpoint [kV]")
-                .description("The target value of the voltage.Command format is xx, adhere typing 05 not 5.")
-                .assignmentOptional().defaultValue(0.0)
+                .description("The target value of the voltage. "
+                "Command format is xx, adhere typing 05 not 5. ")
+                .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(60)
                 .unit(Unit.VOLT)
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
                 
@@ -186,30 +187,32 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         
         INT32_ELEMENT(expected).key("vc.voltageset")
                 .displayedName("Voltage Setpoint [kV]")
-                .description("The target value of the Voltage.Command format is xx, adhere typing 05 not 5.")
+                .description("The target value of the Voltage. "
+                "Command format is xx, adhere typing 05 not 5. ")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(60)
                 .unit(Unit.VOLT)
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),      
                 
         INT32_ELEMENT(expected).key("vc.currentset")
                 .displayedName("Current Setpoint [mA]")
-                .description("The target value of the Current.Command format is xx, adhere typing 05 not 5.")
+                .description("The target value of the Current. "
+                "Command format is xx, adhere typing 05 not 5. ")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(80)
                 .unit(Unit.AMPERE)
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
                 
-        SLOT_ELEMENT(expected).key("setVoltageCurrent")
+        SLOT_ELEMENT(expected).key("vc.setVoltageCurrent")
                 .tags("scpi")
                 .alias("SN:{vc.voltageset},{vc.currentset}")
                 .displayedName("Set Voltage and Current Setpoints")
                 .description("Set target value of Current and Voltage at the same time.")
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .commit(),
         
     
@@ -221,48 +224,52 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 
         INT32_ELEMENT(expected).key("exposuretimer.number")
                 .displayedName("Exposure timer setpoint number")
-                .description("Number of exposure timer: format integer x")
+                .description("Number of exposure timer.")
                 .assignmentOptional().defaultValue(1)
+                .allowedStates("Ok.On Ok.Off")
                 .options("1 2 3 4") 
                 .reconfigurable()
                 .commit(),
       
         INT32_ELEMENT(expected).key("exposuretimer.hours")
-                .displayedName("Exposure timer setpoint hours(HH)")
-                .description("Exposure timer setpoint value: hours")
+                .displayedName("Exposure timer setpoint hours")
+                .description("Exposure timer setpoint value [hrs")
                 .unit(Unit.HOUR)
                 .assignmentOptional().defaultValue(0)
+                .allowedStates("Ok.On Ok.Off")
                 .minInc(0).maxInc(99)
                 .reconfigurable()
                 .commit(),
         
         INT32_ELEMENT(expected).key("exposuretimer.minutes")
-                .displayedName("Exposure timer setpoint minutes(MM)")
-                .description("Exposure timer setpoint value: minutes")
+                .displayedName("Exposure timer setpoint minutes")
+                .description("Exposure timer setpoint value [min]")
                 .unit(Unit.MINUTE)
                 .assignmentOptional().defaultValue(0)
+                .allowedStates("Ok.On Ok.Off")
                 .minInc(0).maxInc(59)
                 .reconfigurable()
                 .commit(),     
                 
         INT32_ELEMENT(expected).key("exposuretimer.seconds")
-                .displayedName("Exposure timer setpoint seconds(SS)")
-                .description("Exposure timer setpoint value: seconds")
+                .displayedName("Exposure timer setpoint seconds")
+                .description("Exposure timer setpoint value [sec}")
                 .unit(Unit.SECOND)
                 .assignmentOptional().defaultValue(0)
+                .allowedStates("Ok.On Ok.Off")
                 .minInc(0).maxInc(59)
                 .reconfigurable()
                 .commit(), 
         
-        #Set Exposure Timer Setpoints. NOTE: this reply is in seconds, needs conversion to HH,MM,SS (Andrea) 
+        #Set Exposure Timer Setpoints. NOTE: this reply is in seconds, needs conversion to HH,MM,SS 
         INT32_ELEMENT(expected).key("exposuretimer.setpoint")
                 .tags("scpi poll")
                 .alias("TP:{exposuretimer.number},{exposuretimer.hours},{exposuretimer.minutes},{exposuretimer.seconds};;TN;*{exposuretimer.setpoint:d};") 
                 .displayedName("Exposure timer setpoint values")
-                .description("Exposure timer setpoint values: seconds")
+                .description("Exposure timer setpoint values [sec]")
                 .unit(Unit.SECOND)
-                .assignmentOptional().defaultValue(0.0)
-                .allowedStates("Ok.On")
+                .assignmentOptional()
+                .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
                 
@@ -270,7 +277,8 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;TA;*{exposuretimer.actual:d};") 
                 .displayedName("Exposure Timer actual value")
-                .description("Exposure Timer actual value: seconds")
+                .description("Exposure Timer actual value [sec]")
+                .allowedStates("Ok.On Ok.Off")
                 .unit(Unit.SECOND)
                 .readOnly()
                 .commit(),        
@@ -281,21 +289,21 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .commit(),                        
       
         INT32_ELEMENT(expected).key("exposuretimerActual.hours")
-                .displayedName("Exposure timer actual value hours(HH)")
+                .displayedName("Exposure timer actual value [hrs]")
                 .description("Exposure timer actual value: hours")
                 .unit(Unit.HOUR)                
                 .readOnly()
                 .commit(),
         
         INT32_ELEMENT(expected).key("exposuretimerActual.minutes")
-                .displayedName("Exposure timer actual value minutes(MM)")
+                .displayedName("Exposure timer actual value [min]")
                 .description("Exposure timer actual value: minutes")
                 .unit(Unit.MINUTE)
                 .readOnly()                
                 .commit(),     
                 
         INT32_ELEMENT(expected).key("exposuretimerActual.seconds")
-                .displayedName("Exposure timer actual value seconds(SS)")
+                .displayedName("Exposure timer actual value [sec]")
                 .description("Exposure timer actual value: seconds")
                 .unit(Unit.SECOND)
                 .readOnly()
@@ -307,7 +315,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .alias("TS:{exposuretimer.number}")
                 .displayedName("Exposure timer ON")
                 .description("Turn the Exposure timer specified in the Exposure timer number field ON")
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .commit(),
                 
         SLOT_ELEMENT(expected).key("setExposureTimerOff")
@@ -315,7 +323,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .alias("TE:{exposuretimer.number}")
                 .displayedName("Exposure timer OFF")
                 .description("Turn the Exposure timer specified in the Exposure timer number field OFF")
-                .allowedStates("Ok.On")
+                .allowedStates("Ok.On Ok.Off")
                 .commit(),
                 
         # Read and display Status Words
@@ -323,13 +331,14 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;SR:01;*{statusWord1:d};") 
                 .displayedName("Status Word 1")
-                .description("Status Word 1 decimal value.")                                
-                .allowedStates("Ok.On")                
+                .description("Status Word 1 decimal value.") 
+                .allowedStates("Ok.On")
+                .readOnly()                               
                 .commit(),
         
         INT32_ELEMENT(expected).key("statusWord1Bin")
                 .displayedName("Status Word 1 binary")
-                .description("Status Word 1 binary value.")                                
+                .description("Status Word 1 binary value.")  
                 .readOnly()
                 .commit(), 
         
@@ -337,13 +346,14 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;SR:02;*{statusWord2:d};") 
                 .displayedName("Status Word 2")
-                .description("Status Word 2 decimal value.")                                
-                .allowedStates("Ok.On")                
+                .description("Status Word 2 decimal value.")
+                .allowedStates("Ok.On")
+                .readOnly()                 
                 .commit(),
                 
         INT32_ELEMENT(expected).key("statusWord2Bin")
                 .displayedName("Status Word 2 binary")
-                .description("Status Word 2 binary value.")                                
+                .description("Status Word 2 binary value.")  
                 .readOnly()
                 .commit(),
         
@@ -351,13 +361,14 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;SR:03;*{statusWord3:d};") 
                 .displayedName("Status Word 3")
-                .description("Status Word 3 decimal value.")                                
-                .allowedStates("Ok.On")                
+                .description("Status Word 3 decimal value.")
+                .allowedStates("Ok.On")
+                .readOnly()                 
                 .commit(),
                 
         INT32_ELEMENT(expected).key("statusWord3Bin")
                 .displayedName("Status Word 3 binary")
-                .description("Status Word 3 binary value.")                                
+                .description("Status Word 3 binary value.")   
                 .readOnly()
                 .commit(),
         
@@ -365,13 +376,14 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;SR:04;*{statusWord4:d};") 
                 .displayedName("Status Word 4")
-                .description("Status Word 4 decimal value.")                                
-                .allowedStates("Ok.On")                
+                .description("Status Word 4 decimal value.")
+                .allowedStates("Ok.On")
+                .readOnly()                
                 .commit(),
                 
         INT32_ELEMENT(expected).key("statusWord4Bin")
                 .displayedName("Status Word 4 binary")
-                .description("Status Word 4 binary value.")                                
+                .description("Status Word 4 binary value.")  
                 .readOnly()
                 .commit(),
         
@@ -379,18 +391,16 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .tags("scpi poll")
                 .alias(";;SR:06;*{statusWord6:d};") 
                 .displayedName("Status Word 6")
-                .description("Status Word 6 decimal value.")                                
-                .allowedStates("Ok.On")                
+                .description("Status Word 6 decimal value.")
+                .allowedStates("Ok.On")
+                .readOnly()                 
                 .commit(),
                 
         INT32_ELEMENT(expected).key("statusWord6Bin")
                 .displayedName("Status Word 6 binary")
-                .description("Status Word 6 binary value.")                                
+                .description("Status Word 6 binary value.")             
                 .readOnly()
-                .commit(),
-        
-     
-                
+                .commit(),      
                 
         )
         
