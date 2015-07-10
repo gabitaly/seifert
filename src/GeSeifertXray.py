@@ -25,6 +25,12 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
             sigslot.registerSlot(self.setExposureTimerOn)
         
             sigslot.registerSlot(self.setExposureTimerOff)
+            
+            sigslot.registerSlot(self.setExposureTimerValues)
+            
+            sigslot.registerSlot(self.acknowledgeError)
+            
+            sigslot.registerSlot(self.setWarmupProgram)                                            
                         
         def setVoltageCurrent(self):
             ''' Will set the voltage and current setpoints at once'''
@@ -45,11 +51,77 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
             try:
                 self.sendCommand("setExposureTimerOff")
             except:
-                raise  
+                raise 
+        
+        def setExposureTimerValues(self):
+            ''' Set the specified Exposure Timer setpoint values'''
+            try:
+                self.sendCommand("exposuretimer.setpoint")
+            except:
+                raise     
+        
+        def acknowledgeError(self):
+            ''' Error message cancellation '''
+            try:
+                self.sendCommand("sw.acknowledgeError")
+            except:
+                raise    
+        
+        def setWarmupProgram(self):
+            ''' Set warm-up program '''
+            try:
+                self.sendCommand("warmup.setProgram")
+            except:
+                raise 
+        
         
         ### Override base class post-processing method pollInstrumentSpecific ###
         def pollInstrumentSpecific(self): 
-            '''Perform post-processing of queried data'''
+            
+            
+            '''Status Word 12 messages'''
+            statusWord12Msg = {
+            33:'Cooling system failed',
+            37:'Absolute undervoltage monitoring',
+            38:'Absolute overvoltage monitoring',
+            39:'Absolute undercurrent monitoring',
+            43:'Extern stop',
+            46:'EMERGENCY-STOP',
+            49:'Preselection exceeded rated power',
+            50:'Tube overpower',
+            51:'Preselection out of range',
+            52:'Presel.exceeding rated generator current',
+            53:'High voltage lamp defective',
+            55:'Relative overcurrent monitoring',
+            56:'Relative undervoltage monitoring',
+            60:'Relative undercurrent monitoring',
+            63:'Door contact 1 and 2 open',
+            64:'Door contact 1 open',
+            65:'Door contact 2 open',
+            67:'Temp. supervision cooling system',
+            70:'Tube to be warmed up?',
+            72:'Preselection out of range',
+            76:'----Stand-by----',
+            80:'Temperature supervision power module',
+            86:'HV contact faulty',
+            90:'Fault in filament circuit',
+            91:'Buffer battery empty',
+            96:'Shutter non-systematically closed',
+            97:'Shutter not connected',
+            98:'Shutter not opened',
+            99:'Shutter not closed',
+            104:'External warning lamp failed',
+            105:'Temperature supervision generator',
+            106:'Warm-up necessary',
+            108:'Power fail (low voltage)',
+            109:'Warm-up! 0=No',
+            112:'Shutter safety circuit open',
+            113:'Absolute overcurrent monitoring',
+            114:'Relative overvoltage monitoring',
+            116:'Warm-up terminated after 3 attempts',
+            117:'Warm-up aborted. Try again',
+            118:'Push START button'}
+            
             try:
                 '''Current setpoint is returned in uA, convert to mA'''
                 currentInmA = self.get("current.setpoint") / 1000
@@ -71,26 +143,31 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 self.set("exposuretimerActual.seconds",ss)
                 
                 '''Process Status Words'''
-                sw1 = self.get("statusWord1")
+                sw1 = self.get("sw.statusWord1")
                 sw1Bin = bin(sw1)
-                self.set("statusWord1Bin",sw1Bin)
+                self.set("sw.statusWord1Bin",sw1Bin)
                 
-                sw2 = self.get("statusWord2")
+                sw2 = self.get("sw.statusWord2")
                 sw2Bin = bin(sw2)
-                self.set("statusWord2Bin",sw2Bin)
+                self.set("sw.statusWord2Bin",sw2Bin)
                 
-                sw3 = self.get("statusWord3")
+                sw3 = self.get("sw.statusWord3")
                 sw3Bin = bin(sw3)
-                self.set("statusWord3Bin",sw3Bin)
+                self.set("sw.statusWord3Bin",sw3Bin)
                 
-                sw4 = self.get("statusWord4")
+                sw4 = self.get("sw.statusWord4")
                 sw4Bin = bin(sw4)
-                self.set("statusWord4Bin",sw4Bin)
+                self.set("sw.statusWord4Bin",sw4Bin)
                 
-                sw6 = self.get("statusWord6")
+                sw6 = self.get("sw.statusWord6")
                 sw6Bin = bin(sw6)
-                self.set("statusWord6Bin",sw6Bin)
-                                
+                self.set("sw.statusWord6Bin",sw6Bin)
+                
+                '''Display Status Word 12 message'''
+                msgIdx = self.get("statusMassage.statusWord12")
+                msgTxt= statusWord12Msg[msgIdx]
+                self.set("statusMassage.statusWord12Str",msgTxt)
+                
             except:
                 raise
             
@@ -133,12 +210,12 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         INT32_ELEMENT(expected).key("current.setpoint")
                 .tags("scpi poll")
                 .alias("SC:{current.setpoint};;CN;*{current.setpoint:d};") 
-                .displayedName("Current Setpoint [mA]")
+                .displayedName("Current Setpoint")
                 .description("The target value of the current. "
                 "Command format is xx, adhere typing 05 not 5.")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(80)
-                .unit(Unit.AMPERE)
+                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MILLI)
                 .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
@@ -146,9 +223,9 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         INT32_ELEMENT(expected).key("current.actual")
                 .tags("scpi poll")
                 .alias(";;CA;*{current.actual:d};")
-                .displayedName("Actual Current Setpoint [mA]")
+                .displayedName("Actual Current Setpoint")
                 .description("The actual value of the Current Setpoint.")
-                .unit(Unit.AMPERE)
+                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MILLI)
                 .readOnly()
                 .commit(),            
                                 
@@ -166,7 +243,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 "Command format is xx, adhere typing 05 not 5. ")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(60)
-                .unit(Unit.VOLT)
+                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
                 .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
@@ -176,33 +253,33 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .alias(";;VA;*{voltage.actual:d};")
                 .displayedName("Actual Voltage Setpoint [kV]")
                 .description("The actual value of the Voltage Setpoint.")
-                .unit(Unit.VOLT)
+                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
                 .readOnly()
                 .commit(),                
   
         # Define current and voltage setpoints to be sent in one SLOT command 
         NODE_ELEMENT(expected).key("vc")
-                .displayedName("Simultaneous Voltage and Current Setpoints")
+                .displayedName("Voltage and Current Setpoints")
                 .commit(),
         
         INT32_ELEMENT(expected).key("vc.voltageset")
-                .displayedName("Voltage Setpoint [kV]")
+                .displayedName("Voltage Setpoint")
                 .description("The target value of the Voltage. "
                 "Command format is xx, adhere typing 05 not 5. ")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(60)
-                .unit(Unit.VOLT)
+                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
                 .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),      
                 
         INT32_ELEMENT(expected).key("vc.currentset")
-                .displayedName("Current Setpoint [mA]")
+                .displayedName("Current Setpoint")
                 .description("The target value of the Current. "
                 "Command format is xx, adhere typing 05 not 5. ")
                 .assignmentOptional().defaultValue(0)
                 .minInc(0).maxInc(80)
-                .unit(Unit.AMPERE)
+                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MILLI)
                 .allowedStates("Ok.On Ok.Off")
                 .reconfigurable()
                 .commit(),
@@ -262,146 +339,311 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .commit(), 
         
         #Set Exposure Timer Setpoints. NOTE: this reply is in seconds, needs conversion to HH,MM,SS 
-        INT32_ELEMENT(expected).key("exposuretimer.setpoint")
+        SLOT_ELEMENT(expected).key("exposuretimer.setpoint")
                 .tags("scpi poll")
-                .alias("TP:{exposuretimer.number},{exposuretimer.hours},{exposuretimer.minutes},{exposuretimer.seconds};;TN;*{exposuretimer.setpoint:d};") 
-                .displayedName("Exposure timer setpoint values")
-                .description("Exposure timer setpoint values [sec]")
-                .unit(Unit.SECOND)
-                .assignmentOptional()
-                .allowedStates("Ok.On Ok.Off")
-                .reconfigurable()
+                .alias("TP:{exposuretimer.number},{exposuretimer.hours},{exposuretimer.minutes},{exposuretimer.seconds};;TN:;*{exposuretimer.setpoint:d};") 
+                .displayedName("Set Exposure timer setpoints")
+                .description("Configure the specified Exposure Timer setpoints.")                                
+                .allowedStates("Ok.On Ok.Off")                
                 .commit(),
                 
         INT32_ELEMENT(expected).key("exposuretimer.actual")
                 .tags("scpi poll")
-                .alias(";;TA;*{exposuretimer.actual:d};") 
+                .alias(";;TA:;*{exposuretimer.actual:d};") 
                 .displayedName("Exposure Timer actual value")
-                .description("Exposure Timer actual value [sec]")
-                .allowedStates("Ok.On Ok.Off")
+                .description("Exposure Timer actual value [sec]")                
                 .unit(Unit.SECOND)
                 .readOnly()
                 .commit(),        
-      
-        # Displays the Exposure Timer Actual values        
-        NODE_ELEMENT(expected).key("exposuretimerActual")
-                .displayedName("Exposure Timer Actual Values")
-                .commit(),                        
-      
-        INT32_ELEMENT(expected).key("exposuretimerActual.hours")
-                .displayedName("Exposure timer actual value [hrs]")
-                .description("Exposure timer actual value: hours")
-                .unit(Unit.HOUR)                
-                .readOnly()
-                .commit(),
         
-        INT32_ELEMENT(expected).key("exposuretimerActual.minutes")
-                .displayedName("Exposure timer actual value [min]")
-                .description("Exposure timer actual value: minutes")
-                .unit(Unit.MINUTE)
-                .readOnly()                
-                .commit(),     
-                
-        INT32_ELEMENT(expected).key("exposuretimerActual.seconds")
-                .displayedName("Exposure timer actual value [sec]")
-                .description("Exposure timer actual value: seconds")
-                .unit(Unit.SECOND)
-                .readOnly()
-                .commit(),         
-                            
         # Set the specified Exposure Timer ON/OFF
         SLOT_ELEMENT(expected).key("setExposureTimerOn")
                 .tags("scpi")
                 .alias("TS:{exposuretimer.number}")
-                .displayedName("Exposure timer ON")
-                .description("Turn the Exposure timer specified in the Exposure timer number field ON")
+                .displayedName("Turn Exposure timer ON")
+                .description("Turn the specified Exposure timer ON")
                 .allowedStates("Ok.On Ok.Off")
                 .commit(),
                 
         SLOT_ELEMENT(expected).key("setExposureTimerOff")
                 .tags("scpi")
                 .alias("TE:{exposuretimer.number}")
-                .displayedName("Exposure timer OFF")
-                .description("Turn the Exposure timer specified in the Exposure timer number field OFF")
+                .displayedName("Turn Exposure timer OFF")
+                .description("Turn the specified Exposure timer OFF")
                 .allowedStates("Ok.On Ok.Off")
                 .commit(),
                 
-        # Read and display Status Words
-        INT32_ELEMENT(expected).key("statusWord1")
-                .tags("scpi poll")
-                .alias(";;SR:01;*{statusWord1:d};") 
-                .displayedName("Status Word 1")
-                .description("Status Word 1 decimal value.") 
-                .allowedStates("Ok.On")
-                .readOnly()                               
+        # Displays the Exposure Timer Actual values        
+        NODE_ELEMENT(expected).key("exposuretimerActual")
+                .displayedName("Exposure Timer Actual Values")
+                .commit(),                        
+      
+        INT32_ELEMENT(expected).key("exposuretimerActual.hours")
+                .displayedName("Exposure timer actual value hours")
+                .description("Exposure timer actual value: hours")
+                .unit(Unit.HOUR)                
+                .readOnly() 
                 .commit(),
         
-        INT32_ELEMENT(expected).key("statusWord1Bin")
-                .displayedName("Status Word 1 binary")
-                .description("Status Word 1 binary value.")  
+        INT32_ELEMENT(expected).key("exposuretimerActual.minutes")
+                .displayedName("Exposure timer actual value minutes")
+                .description("Exposure timer actual value: minutes")
+                .unit(Unit.MINUTE)
+                .readOnly()                
+                .commit(),     
+                
+        INT32_ELEMENT(expected).key("exposuretimerActual.seconds")
+                .displayedName("Exposure timer actual value seconds")
+                .description("Exposure timer actual value: seconds")
+                .unit(Unit.SECOND)
+                .readOnly()
+                .commit(),                                            
+        
+        # Read and clear status message
+        NODE_ELEMENT(expected).key("statusMassage")
+                .displayedName("Status Message")
+                .commit(),   
+                
+        INT32_ELEMENT(expected).key("statusMassage.statusWord12")
+                .tags("scpi poll")
+                .alias(";;SR:12;*{statusMassage.statusWord12:d};") 
+                .displayedName("Status Word 12 Code")
+                .description("Status Word 12 Code.")        
+                .readOnly()                 
+                .commit(),
+                
+        STRING_ELEMENT(expected).key("statusMassage.statusWord12Str")
+                .displayedName("Status Word 12 Message")
+                .description("Status Word 12 Message")             
                 .readOnly()
                 .commit(), 
         
-        INT32_ELEMENT(expected).key("statusWord2")
+        SLOT_ELEMENT(expected).key("statusMassage.acknowledgeError")
                 .tags("scpi poll")
-                .alias(";;SR:02;*{statusWord2:d};") 
+                .alias("CL;;;;")
+                .displayedName("Acknowledge Error")
+                .description("Cancellation of message.")
+                .commit(),
+                
+        # Read and display Status Words
+        NODE_ELEMENT(expected).key("sw")
+                .displayedName("Status Words")
+                .commit(),  
+                
+        INT32_ELEMENT(expected).key("sw.statusWord1")
+                .tags("scpi poll")
+                .alias(";;SR:01;*{sw.statusWord1:d};") 
+                .displayedName("Status Word 1")
+                .description("Status Word 1 decimal value.")                 
+                .readOnly()                               
+                .commit(),
+        
+        INT32_ELEMENT(expected).key("sw.statusWord1Bin")
+                .displayedName("Status Word 1 binary")
+                .description("Status Word 1: "
+                "Ext.Computer Control|High Voltage|Cooling Circuit|Buffer Battery|mA Nom=Actual|kV Nom=Actual|Shutter Status|Not used ")
+                .readOnly()
+                .commit(), 
+        
+        INT32_ELEMENT(expected).key("sw.statusWord2")
+                .tags("scpi poll")
+                .alias(";;SR:02;*{sw.statusWord2:d};") 
                 .displayedName("Status Word 2")
-                .description("Status Word 2 decimal value.")
-                .allowedStates("Ok.On")
+                .description("Status Word 2 decimal value.")                
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("statusWord2Bin")
+        INT32_ELEMENT(expected).key("sw.statusWord2Bin")
                 .displayedName("Status Word 2 binary")
-                .description("Status Word 2 binary value.")  
+                .description("Status Word 2: "
+                "Timer1|Timer2|Timer3|Timer4|ShutterControl1|ShutterControl2|ShutterControl3|ShutterControl4 ")  
                 .readOnly()
                 .commit(),
         
-        INT32_ELEMENT(expected).key("statusWord3")
+        INT32_ELEMENT(expected).key("sw.statusWord3")
                 .tags("scpi poll")
-                .alias(";;SR:03;*{statusWord3:d};") 
+                .alias(";;SR:03;*{sw.statusWord3:d};") 
                 .displayedName("Status Word 3")
-                .description("Status Word 3 decimal value.")
-                .allowedStates("Ok.On")
+                .description("Status Word 3 decimal value.")                
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("statusWord3Bin")
+        INT32_ELEMENT(expected).key("sw.statusWord3Bin")
                 .displayedName("Status Word 3 binary")
-                .description("Status Word 3 binary value.")   
+                .description("Status Word 3: "
+                "Shutter1Command|Shutter1Status|Shutter1 Non-Syst.Closed|Shutter1Connected|Shutter2Command|Shutter2Status|Shutter2 Non-syst.Closed|Shutter2Connected ")   
                 .readOnly()
                 .commit(),
         
-        INT32_ELEMENT(expected).key("statusWord4")
+        INT32_ELEMENT(expected).key("sw.statusWord4")
                 .tags("scpi poll")
-                .alias(";;SR:04;*{statusWord4:d};") 
+                .alias(";;SR:04;*{sw.statusWord4:d};") 
                 .displayedName("Status Word 4")
-                .description("Status Word 4 decimal value.")
-                .allowedStates("Ok.On")
+                .description("Status Word 4 decimal value.")                
                 .readOnly()                
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("statusWord4Bin")
+        INT32_ELEMENT(expected).key("sw.statusWord4Bin")
                 .displayedName("Status Word 4 binary")
-                .description("Status Word 4 binary value.")  
+                .description("Status Word 4: "
+                "Shutter3Command|Shutter3Status|Shutter3 Non-Syst.Closed|Shutter3Connected|Shutter4Command|Shutter4Status|Shutter4 Non-syst.Closed|Shutter4Connected ")  
                 .readOnly()
                 .commit(),
         
-        INT32_ELEMENT(expected).key("statusWord6")
+        INT32_ELEMENT(expected).key("sw.statusWord6")
                 .tags("scpi poll")
-                .alias(";;SR:06;*{statusWord6:d};") 
+                .alias(";;SR:06;*{sw.statusWord6:d};") 
                 .displayedName("Status Word 6")
-                .description("Status Word 6 decimal value.")
-                .allowedStates("Ok.On")
+                .description("Status Word 6 decimal value.")        
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("statusWord6Bin")
+        INT32_ELEMENT(expected).key("sw.statusWord6Bin")
                 .displayedName("Status Word 6 binary")
-                .description("Status Word 6 binary value.")             
+                .description("Status Word 6: "
+                "Not Used|Not Used|Not Used|Not Used|Warm-up Progr.|Warm-up Aborted|Warm-up via Ext.Computer|Warm-up via Keeyboard ")             
                 .readOnly()
                 .commit(),      
+        
+        # Set and read the Water Flow Rate
+        INT32_ELEMENT(expected).key("sw.statusWord14")
+                .tags("scpi poll")
+                .alias("SW:14:{sw.statusWord14};;;;")
+                .displayedName("Set Minimum Water Flow Rate")
+                .description("Minimum Water Flow Rate. Min 181Hz, Max 250Hz")
+                .assignmentOptional().defaultValue(181)
+                .minInc(181).maxInc(250)
+                .unit(Unit.HERTZ)
+                .allowedStates("Ok.On Ok.Off")
+                .reconfigurable()
+                .commit(),
+        
+        INT32_ELEMENT(expected).key("sw.statusWord14Actual")
+                .tags("scpi poll")
+                .alias(";;SR:14;*{sw.statusWord14Actual:d};") 
+                .displayedName("Minimum Water Flow Rate actual")
+                .description("Minimum Water Flow Rate actual value. Min 181Hz, Max 250Hz")        
+                .readOnly()                 
+                .commit(), 
+        
+        INT32_ELEMENT(expected).key("sw.statusWord15")
+                .tags("scpi poll")
+                .alias(";;SR:15;*{sw.statusWord15:d};") 
+                .displayedName("Water Flow Rate actual")
+                .description("Water Flow Rate actual value. Max 250Hz")  
+                .unit(Unit.HERTZ)
+                .readOnly()                 
+                .commit(),         
                 
+        # Warm-up program
+        NODE_ELEMENT(expected).key("warmup")
+                .displayedName("Warm-up Program")
+                .commit(),   
+        
+        INT32_ELEMENT(expected).key("warmup.time")
+                .displayedName("Non-operative interval time")
+                .description("Non-operative interval. "
+                "0 = no warm-up, 1 = one day, 2 = 2 days, 3 = 1 week, 4 = via RTC ")
+                .assignmentOptional().defaultValue(0)
+                .allowedStates("Ok.On Ok.Off")
+                .options("0 1 2 3 4") 
+                .reconfigurable()
+                .commit(), 
+                
+        INT32_ELEMENT(expected).key("warmup.voltage")
+                .displayedName("Test voltage")
+                .description("Test voltage [kV]")                
+                .assignmentOptional().defaultValue(0)
+                .allowedStates("Ok.On Ok.Off")
+                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
+                .minInc(0).maxInc(60) 
+                .reconfigurable()
+                .commit(),         
+        
+        SLOT_ELEMENT(expected).key("warmup.setProgram")
+                .tags("scpi")
+                .alias("WU:{warmup.time},{warmup.voltage};;;;")
+                .displayedName("Set Warm-up program")
+                .description("Set Warm-up program.")
+                .commit(),
+                
+        INT32_ELEMENT(expected).key("warmup.timeleft")
+                .tags("scpi poll")
+                .alias(";;WT:;*{warmup.timeleft:d};") 
+                .displayedName("Warm-up time left")
+                .description("Warm-up time left")  
+                .unit(Unit.SECOND)
+                .readOnly()                 
+                .commit(), 
+                
+        NODE_ELEMENT(expected).key("keypadOnOff")
+                .displayedName("Enable/Disable Keypad")
+                .commit(),
+            
+        INT32_ELEMENT(expected).key("keypadOnOff.OnOff")
+                .tags("scpi")
+                .alias("KB:{keypadOnOff.OnOff};;;;") 
+                .displayedName("Enable/Disable Keypad")
+                .description("Enable/Disable Keypad. 0 = blocked except for key STOP, 1 = enabled ")
+                .assignmentOptional().defaultValue(1)
+                .options("0 1")      
+                .commit(),
+        
+        NODE_ELEMENT(expected).key("focus")
+                .displayedName("Focus")
+                .commit(),        
+                
+        STRING_ELEMENT(expected).key("focus.string")
+                .tags("scpi poll")
+                .alias(";;FR;{focus.string:s};") 
+                .displayedName("Focus settings")
+                .description("Focus settings string.")                  
+                .readOnly()                 
+                .commit(),
+                
+        NODE_ELEMENT(expected).key("anode")
+                .displayedName("Anode material")
+                .commit(),        
+                
+        STRING_ELEMENT(expected).key("anode.material")
+                .tags("scpi poll")
+                .alias(";;MR;{anode.material:s};") 
+                .displayedName("Anode material type")
+                .description("Anode material string.")                  
+                .readOnly()                 
+                .commit(), 
+        
+        NODE_ELEMENT(expected).key("beamshutter")
+                .displayedName("Beam Shutter Control")
+                .commit(),   
+                
+        STRING_ELEMENT(expected).key("beamshutter.control")
+                .tags("scpi")
+                .alias("CC:{beamshutter.control};;;;") 
+                .displayedName("Control via keypad/computer")
+                .description("Beam shutter control: 0000 = via keypad, 0010 = via computer.")  
+                .assignmentOptional().defaultValue("0010")
+                .options("0000 0010")
+                .reconfigurable()
+                .commit(),
+        
+        INT32_ELEMENT(expected).key("beamshutter.open")
+                .tags("scpi")
+                .alias("OS:{beamshutter.open};;;;") 
+                .displayedName("Open beam shutter")
+                .description("Open beam shutter")
+                .assignmentOptional().defaultValue(3)
+                .options("1 2 3 4") 
+                .commit(),
+                
+        INT32_ELEMENT(expected).key("beamshutter.close")
+                .tags("scpi")
+                .alias("CS:{beamshutter.close};;;;") 
+                .displayedName("Close beam shutter")
+                .description("Close beam shutter")
+                .assignmentOptional().defaultValue(3)
+                .options("1 2 3 4") 
+                .commit(),        
         )
         
     def followHardwareState(self):
