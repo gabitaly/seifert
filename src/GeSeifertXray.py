@@ -58,7 +58,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
     def setExposureTimerValues(self):
         ''' Set the Exposure Timer3 setpoint values'''
         try:
-            self.sendCommand("setExposureTimerSetpoints")
+            self.sendCommand("setExposureTimerValues")
         except:
             raise     
 
@@ -72,7 +72,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
     def setWarmupProgram(self):
         ''' Set warm-up program '''
         try:
-            self.sendCommand("warmup.setProgram")
+            self.sendCommand("setWarmupProgram")
         except:
             raise 
         
@@ -218,33 +218,24 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .reconfigurable()
                 .commit(), 
         
-        #Set Exposure Timer Setpoints. NOTE: reply is in seconds, needs conversion to HH,MM,SS 
-        
-        SLOT_ELEMENT(expected).key("setExposureTimerSetpoints")
-                .tags("scpi")
-                .alias("TP:3,{exposuretimer.hours},{exposuretimer.minutes},{exposuretimer.seconds};;;;") 
-                .displayedName("Set target Exposure timer setpoints")
-                .description("Set the targets for the specified Exposure Timer setpoints.")                                
-                .allowedStates("Ok.On Ok.Off")                
-                .commit(),
-       
         INT32_ELEMENT(expected).key("exposuretimer.target")
                 .tags("scpi poll")
                 .alias(";;TN:3;*{exposuretimer.target:d};") 
-                .displayedName("Exposure Timer target value [sec]")
-                .description("Exposure Timer target value [sec]")                
+                .displayedName("Exposure Timer 3 target value [sec]")
+                .description("Exposure Timer 3 target value [sec]")                
                 .unit(Unit.SECOND)
                 .readOnly()
                 .commit(), 
                 
-        INT32_ELEMENT(expected).key("exposuretimer.actual")
-                .tags("scpi poll")
-                .alias(";;TA:3;*{exposuretimer.actual:d};") 
-                .displayedName("Exposure Timer actual value [sec]")
-                .description("Exposure Timer actual value [sec]")                
-                .unit(Unit.SECOND)
-                .readOnly()
-                .commit(),        
+        #Set Exposure Timer Setpoints. NOTE: reply is in seconds, needs conversion to HH,MM,SS 
+        
+        SLOT_ELEMENT(expected).key("setExposureTimerValues")
+                .tags("scpi")
+                .alias("TP:3,{exposuretimer.hours},{exposuretimer.minutes},{exposuretimer.seconds};;;;") 
+                .displayedName("Set target Exposure timer 3 setpoints")
+                .description("Set the targets for the specified Exposure Timer setpoints.")                                
+                .allowedStates("Ok.On Ok.Off")                
+                .commit(),                                               
         
         # Set the specified Exposure Timer ON/OFF
         
@@ -267,7 +258,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         # Displays the Exposure Timer Actual values      
         
         NODE_ELEMENT(expected).key("exposuretimerActual")
-                .displayedName("Exposure Timer Actual Values")
+                .displayedName("Exposure Timer 3 Actual Values")
                 .commit(),                        
       
         INT32_ELEMENT(expected).key("exposuretimerActual.hours")
@@ -289,8 +280,18 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .description("Exposure timer actual value: seconds")
                 .unit(Unit.SECOND)
                 .readOnly()
-                .commit(),                                            
-        """
+                .commit(),    
+                        
+        INT32_ELEMENT(expected).key("exposuretimerActual.totalSec")
+                .tags("scpi poll")
+                .alias(";;TA:3;*{exposuretimerActual.totalSec:d};") 
+                .displayedName("Exposure Timer actual value [sec]")
+                .description("Exposure Timer actual value [sec]")                
+                .unit(Unit.SECOND)
+                .readOnly()
+                .commit(),
+        
+        
         # Read and clear status message
         
         NODE_ELEMENT(expected).key("statusMassage")
@@ -304,7 +305,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .description("Status Word 12 Code.")        
                 .readOnly()                 
                 .commit(),
-                
+               
         STRING_ELEMENT(expected).key("statusMassage.statusWord12Str")
                 .displayedName("Status Word 12 Message")
                 .description("Status Word 12 Message")             
@@ -317,7 +318,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .displayedName("Acknowledge Error")
                 .description("Cancellation of message.")
                 .commit(),
-             
+              
         # Read and display Status Words
         
         NODE_ELEMENT(expected).key("sw")
@@ -446,7 +447,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 
         INT32_ELEMENT(expected).key("warmup.voltage")
                 .displayedName("Test voltage")
-                .description("Test voltage [kV]")                
+                .description("Test voltage")                
                 .assignmentOptional().defaultValue(0)
                 .allowedStates("Ok.On Ok.Off")
                 .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
@@ -454,7 +455,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .reconfigurable()
                 .commit(),         
         
-        SLOT_ELEMENT(expected).key("warmup.setProgram")
+        SLOT_ELEMENT(expected).key("setWarmupProgram")
                 .tags("scpi")
                 .alias("WU:{warmup.time},{warmup.voltage};;;;")
                 .displayedName("Set Warm-up program")
@@ -480,7 +481,9 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .displayedName("Enable/Disable Keypad")
                 .description("Enable/Disable Keypad. 0 = blocked except for key STOP, 1 = enabled ")
                 .assignmentOptional().defaultValue(1)
-                .options("0 1")      
+                .allowedStates("Ok.On Ok.Off")
+                .options("0 1")
+                .reconfigurable()
                 .commit(),
         
         NODE_ELEMENT(expected).key("focus")
@@ -527,7 +530,8 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .displayedName("Open beam shutter")
                 .description("Open beam shutter")
                 .assignmentOptional().defaultValue(3)
-                .options("1 2 3 4") 
+                .options("1 2 3 4")
+                .reconfigurable()
                 .commit(),
                 
         INT32_ELEMENT(expected).key("beamshutter.close")
@@ -536,9 +540,10 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .displayedName("Close beam shutter")
                 .description("Close beam shutter")
                 .assignmentOptional().defaultValue(3)
-                .options("1 2 3 4") 
+                .options("1 2 3 4")
+                .reconfigurable()
                 .commit(),
-        """
+        
         )
     """   
     def followHardwareState(self):
@@ -559,6 +564,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
 
        '''Status Word 12 messages'''
        statusWord12Msg = {
+       0:'No messages',
        33:'Cooling system failed',
        37:'Absolute undervoltage monitoring',
        38:'Absolute overvoltage monitoring',
@@ -614,39 +620,39 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
        self.set("voltage.actual",actualInKV)     
        
        '''Exposure timer actual value returned in sec., convert to hh,mm,ss'''
-       mm, ss = divmod(self.get("exposuretimer.actual"),60)
+       mm, ss = divmod(self.get("exposuretimerActual.totalSec"),60)
        hh, mm = divmod(mm, 60)
        self.set("exposuretimerActual.hours",hh)
        self.set("exposuretimerActual.minutes",mm)
        self.set("exposuretimerActual.seconds",ss)
 
-       """
+       
        '''Process Status Words'''
        sw1 = self.get("sw.statusWord1")
-       sw1Bin = bin(sw1)
+       sw1Bin = "{0:8b}".format(sw1)
        self.set("sw.statusWord1Bin",sw1Bin)
 
        sw2 = self.get("sw.statusWord2")
-       sw2Bin = bin(sw2)
+       sw2Bin = "{0:8b}".format(sw2)
        self.set("sw.statusWord2Bin",sw2Bin)
 
        sw3 = self.get("sw.statusWord3")
-       sw3Bin = bin(sw3)
+       sw3Bin = "{0:8b}".format(sw3)
        self.set("sw.statusWord3Bin",sw3Bin)
 
        sw4 = self.get("sw.statusWord4")
-       sw4Bin = bin(sw4)
+       sw4Bin = "{0:8b}".format(sw4)
        self.set("sw.statusWord4Bin",sw4Bin)
 
        sw6 = self.get("sw.statusWord6")
-       sw6Bin = bin(sw6)
+       sw6Bin = "{0:8b}".format(sw6)
        self.set("sw.statusWord6Bin",sw6Bin)
-
-       '''Display Status Word 12 message'''
+       
+       ### Display Status Word 12 message ###
        msgIdx = self.get("statusMassage.statusWord12")
-       msgTxt= statusWord12Msg[msgIdx]
+       msgTxt = statusWord12Msg[msgIdx]
        self.set("statusMassage.statusWord12Str",msgTxt)
-       """              
+                     
        
     
 # This entry used by device server
