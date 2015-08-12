@@ -32,7 +32,12 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
 
         sigslot.registerSlot(self.acknowledgeError)
 
-        sigslot.registerSlot(self.setWarmupProgram)                                            
+        sigslot.registerSlot(self.setWarmupProgram)
+        
+        sigslot.registerSlot(self.openShutter)
+        
+        sigslot.registerSlot(self.closeShutter)
+                                                       
 
     def setVoltageCurrent(self):
         ''' Will set the voltage and current setpoints at once'''
@@ -65,7 +70,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
     def acknowledgeError(self):
         ''' Error message cancellation '''
         try:
-            self.sendCommand("sw.acknowledgeError")
+            self.sendCommand("acknowledgeError")
         except:
             raise    
 
@@ -74,9 +79,21 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         try:
             self.sendCommand("setWarmupProgram")
         except:
-            raise 
-        
-            
+            raise
+    
+    def openShutter(self):
+        ''' Open Beam Shutter 3 '''
+        try:
+            self.sendCommand("openShutter")
+        except:
+            raise    
+ 
+    def closeShutter(self):
+        ''' Close Beam Shutter 3 '''
+        try:
+            self.sendCommand("closeShutter")
+        except:
+            raise    
     
     @staticmethod
     def expectedParameters(expected):
@@ -88,9 +105,9 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         # Define alias for the "on" slot
         SLOT_ELEMENT(expected).key("on")
                 .tags("scpi")
-                .alias("HV:1")
-                .displayedName("High voltage ON")
-                .description("Equipment start.")
+                .alias("HV:1;;;;")
+                .displayedName("START")
+                .description("Turn hi voltage on")
                 .expertAccess()
                 .allowedStates("Ok.Off")
                 .commit(),
@@ -99,14 +116,14 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         # Define alias for the "off" slot
         SLOT_ELEMENT(expected).key("off")
                 .tags("scpi")
-                .alias("HV:0")
-                .displayedName("High voltage OFF")
-                .description("Equipment stop.")
+                .alias("HV:0;;;;")
+                .displayedName("STOP")
+                .description("Turn hi voltage off.")
                 .expertAccess()
                 .allowedStates("Ok.On")
                 .commit(),
-           
-                                
+    
+                        
         ### Define specific parameters ###
     
         # Define node for Current Setpoint
@@ -312,7 +329,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()
                 .commit(), 
         
-        SLOT_ELEMENT(expected).key("statusMassage.acknowledgeError")
+        SLOT_ELEMENT(expected).key("acknowledgeError")
                 .tags("scpi")
                 .alias("CL;;;;")
                 .displayedName("Acknowledge Error")
@@ -511,38 +528,38 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .commit(), 
         
         NODE_ELEMENT(expected).key("beamshutter")
-                .displayedName("Beam Shutter Control")
+                .displayedName("Beam Shutter 3 Control")
                 .commit(),   
                 
         STRING_ELEMENT(expected).key("beamshutter.control")
                 .tags("scpi")
                 .alias("CC:{beamshutter.control};;;;") 
                 .displayedName("Control via keypad/computer")
-                .description("Beam shutter control: 0000 = via keypad, 0010 = via computer.")  
+                .description("Beam shutter 3 control: 0000 = via keypad, 0010 = via computer.")  
                 .assignmentOptional().defaultValue("0010")
                 .options("0000 0010")
                 .reconfigurable()
                 .commit(),
         
-        INT32_ELEMENT(expected).key("beamshutter.open")
+        SLOT_ELEMENT(expected).key("openShutter")
                 .tags("scpi")
-                .alias("OS:{beamshutter.open};;;;") 
-                .displayedName("Open beam shutter")
-                .description("Open beam shutter")
-                .assignmentOptional().defaultValue(3)
-                .options("1 2 3 4")
-                .reconfigurable()
+                .alias("OS:3;;;;") 
+                .displayedName("Open Beam Shutter 3")
+                .description("Open beam shutter 3.")                
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("beamshutter.close")
+        SLOT_ELEMENT(expected).key("closeShutter")
                 .tags("scpi")
-                .alias("CS:{beamshutter.close};;;;") 
-                .displayedName("Close beam shutter")
-                .description("Close beam shutter")
-                .assignmentOptional().defaultValue(3)
-                .options("1 2 3 4")
-                .reconfigurable()
+                .alias("CS:3;;;;") 
+                .displayedName("Close Beam Shutter 3")
+                .description("Close beam shutter 3.")                                              
                 .commit(),
+                
+        STRING_ELEMENT(expected).key("beamshutter.status")                                
+                .displayedName("Status: ")
+                .description("Status of the bean shutter: open/closed")  
+                .readOnly()                                 
+                .commit(),        
         
         )
     """   
@@ -643,7 +660,15 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
        sw4 = self.get("sw.statusWord4")
        sw4Bin = "{0:8b}".format(sw4)
        self.set("sw.statusWord4Bin",sw4Bin)
-
+       
+       BeamShutterStatus = sw4 & 0b01000000 # Check Bit6 "Shutter 3 Status" and set the string
+       if BeamShutterStatus > 0:
+           text = "Open"
+           self.set("beamshutter.status",text)
+       else:
+           text = "Closed"
+           self.set("beamshutter.status",text)                      
+       
        sw6 = self.get("sw.statusWord6")
        sw6Bin = "{0:8b}".format(sw6)
        self.set("sw.statusWord6Bin",sw6Bin)
