@@ -6,7 +6,7 @@ __copyright__="Copyright (c) 2010-2015 European XFEL GmbH Hamburg. All rights re
 
 from scpi.scpi_device_2 import *
 
-@KARABO_CLASSINFO("GeSeifertXray", "1.0 1.1 1.2 1.3")
+@KARABO_CLASSINFO("GeSeifertXray", "1.0 1.1 1.2 1.3 1.4")
 class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
 
     def __init__(self, configuration):
@@ -158,9 +158,17 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .alias(";;CA;*{current.actual:d};")
                 .displayedName("Actual Current Setpoint")
                 .description("The actual value of the Current Setpoint.")
-                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MILLI)
+                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MICRO)
                 .readOnly()
-                .commit(),        
+                .commit(),    
+         
+        INT32_ELEMENT(expected).key("current.actual_milli")
+                .displayedName("Actual Current Setpoint")
+                .description("The actual value of the Current Setpoint.")
+                .unit(Unit.AMPERE).metricPrefix(MetricPrefix.MILLI)                
+                .readOnly() 
+                .commit(),
+                                
                             
         # Define node for Voltage Setpoint
         NODE_ELEMENT(expected).key("voltage")
@@ -195,9 +203,16 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .alias(";;VA;*{voltage.actual:d};")
                 .displayedName("Actual Voltage Setpoint")
                 .description("The actual value of the Voltage Setpoint.")
-                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)
+                .unit(Unit.VOLT)
                 .readOnly()
-                .commit(),                        
+                .commit(),   
+                
+        INT32_ELEMENT(expected).key("voltage.actual_kilo")
+                .displayedName("Actual Voltage Setpoint")
+                .description("The actual value of the Voltage Setpoint.")
+                .unit(Unit.VOLT).metricPrefix(MetricPrefix.KILO)                
+                .readOnly() 
+                .commit(),
     
         # Define and configure the Exposure Timers
         
@@ -355,7 +370,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .description("Status Word 1: "
                 "Ext.Computer Control|High Voltage|Cooling Circuit|Buffer Battery|mA Nom=Actual|kV Nom=Actual|Shutter Status|Not used ")
                 .readOnly()
-                .commit(), 
+                .commit(),                                
         
         INT32_ELEMENT(expected).key("sw.statusWord2")
                 .tags("scpi poll")
@@ -446,6 +461,12 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .unit(Unit.HERTZ)
                 .readOnly()                 
                 .commit(),         
+
+        STRING_ELEMENT(expected).key("highVoltageStatus")
+                .displayedName("High Voltage Status")
+                .description("High Voltage Status: On | Off depending on bit 6 of Status Word 1")
+                .readOnly()
+                .commit(),
                 
         # Warm-up program
         NODE_ELEMENT(expected).key("warmup")
@@ -509,7 +530,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 
         STRING_ELEMENT(expected).key("focus.string")
                 .tags("scpi poll")
-                .alias(";;FR;{focus.string};") 
+                .alias(";;FR;*{focus.string};") 
                 .displayedName("Focus settings")
                 .description("Focus settings string.")                  
                 .readOnly()                 
@@ -521,7 +542,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 
         STRING_ELEMENT(expected).key("anode.material")
                 .tags("scpi poll")
-                .alias(";;MR;{anode.material};") 
+                .alias(";;MR;*{anode.material};") 
                 .displayedName("Anode material type")
                 .description("Anode material string.")                  
                 .readOnly()                 
@@ -544,15 +565,15 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
         SLOT_ELEMENT(expected).key("openShutter")
                 .tags("scpi")
                 .alias("OS:3;;;;") 
-                .displayedName("Open Beam Shutter 3")
-                .description("Open beam shutter 3.")                
+                .displayedName("Open Shutter")
+                .description("Opens beam shutter 3.")                
                 .commit(),
                 
         SLOT_ELEMENT(expected).key("closeShutter")
                 .tags("scpi")
                 .alias("CS:3;;;;") 
-                .displayedName("Close Beam Shutter 3")
-                .description("Close beam shutter 3.")                                              
+                .displayedName("Close Shutter")
+                .description("Closes beam shutter 3.")                                              
                 .commit(),
                 
         STRING_ELEMENT(expected).key("beamshutter.status")                                
@@ -627,14 +648,16 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
        '''Current setpoint is returned in uA, convert to mA'''
        targetInmA = self.get("current.target") // 1000
        self.set("current.target",targetInmA)
+       #To avoid flickering of the actual value from uA<->mA we store the mA value in another parameter
        actualInmA = self.get("current.actual") // 1000
-       self.set("current.actual",actualInmA)
+       self.set("current.actual_milli",actualInmA)
 
        '''Voltage setpoint returned in Volt, convert to kV'''
        targetInKV = self.get("voltage.target") // 1000
        self.set("voltage.target",targetInKV)
+       #To avoid flickering of the actual value from Volts<->Kilovolts we store the Kilovolts value in another parameter
        actualInKV = self.get("voltage.actual") // 1000
-       self.set("voltage.actual",actualInKV)     
+       self.set("voltage.actual_kilo",actualInKV)       
        
        '''Exposure timer actual value returned in sec., convert to hh,mm,ss'''
        mm, ss = divmod(self.get("exposuretimerActual.totalSec"),60)
@@ -646,19 +669,23 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
        
        '''Process Status Words'''
        sw1 = self.get("sw.statusWord1")
-       sw1Bin = "{0:8b}".format(sw1)
+       sw1Bin = "{0:08b}".format(sw1)
        self.set("sw.statusWord1Bin",sw1Bin)
+       if (sw1Bin & 32):
+           self.set("highVoltageStatus","On")
+       else:
+           self.set("highVoltageStatus","Off")
 
        sw2 = self.get("sw.statusWord2")
-       sw2Bin = "{0:8b}".format(sw2)
+       sw2Bin = "{0:08b}".format(sw2)
        self.set("sw.statusWord2Bin",sw2Bin)
 
        sw3 = self.get("sw.statusWord3")
-       sw3Bin = "{0:8b}".format(sw3)
+       sw3Bin = "{0:08b}".format(sw3)
        self.set("sw.statusWord3Bin",sw3Bin)
 
        sw4 = self.get("sw.statusWord4")
-       sw4Bin = "{0:8b}".format(sw4)
+       sw4Bin = "{0:08b}".format(sw4)
        self.set("sw.statusWord4Bin",sw4Bin)
        
        BeamShutterStatus = sw4 & 0b01000000 # Check Bit6 "Shutter 3 Status" and set the string
@@ -670,7 +697,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
            self.set("beamshutter.status",text)                      
        
        sw6 = self.get("sw.statusWord6")
-       sw6Bin = "{0:8b}".format(sw6)
+       sw6Bin = "{0:08b}".format(sw6)
        self.set("sw.statusWord6Bin",sw6Bin)
        
        ### Display Status Word 12 message ###
