@@ -365,7 +365,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()                               
                 .commit(),
         
-        INT32_ELEMENT(expected).key("sw.statusWord1Bin")
+        STRING_ELEMENT(expected).key("sw.statusWord1Bin")
                 .displayedName("Status Word 1 binary")
                 .description("Status Word 1: "
                 "Ext.Computer Control|High Voltage|Cooling Circuit|Buffer Battery|mA Nom=Actual|kV Nom=Actual|Shutter Status|Not used ")
@@ -380,7 +380,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("sw.statusWord2Bin")
+        STRING_ELEMENT(expected).key("sw.statusWord2Bin")
                 .displayedName("Status Word 2 binary")
                 .description("Status Word 2: "
                 "Timer1|Timer2|Timer3|Timer4|ShutterControl1|ShutterControl2|ShutterControl3|ShutterControl4 ")  
@@ -395,7 +395,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("sw.statusWord3Bin")
+        STRING_ELEMENT(expected).key("sw.statusWord3Bin")
                 .displayedName("Status Word 3 binary")
                 .description("Status Word 3: "
                 "Shutter1Command|Shutter1Status|Shutter1 Non-Syst.Closed|Shutter1Connected|Shutter2Command|Shutter2Status|Shutter2 Non-syst.Closed|Shutter2Connected ")   
@@ -410,7 +410,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()                
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("sw.statusWord4Bin")
+        STRING_ELEMENT(expected).key("sw.statusWord4Bin")
                 .displayedName("Status Word 4 binary")
                 .description("Status Word 4: "
                 "Shutter3Command|Shutter3Status|Shutter3 Non-Syst.Closed|Shutter3Connected|Shutter4Command|Shutter4Status|Shutter4 Non-syst.Closed|Shutter4Connected ")  
@@ -425,7 +425,7 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .readOnly()                 
                 .commit(),
                 
-        INT32_ELEMENT(expected).key("sw.statusWord6Bin")
+        STRING_ELEMENT(expected).key("sw.statusWord6Bin")
                 .displayedName("Status Word 6 binary")
                 .description("Status Word 6: "
                 "Not Used|Not Used|Not Used|Not Used|Warm-up Progr.|Warm-up Aborted|Warm-up via Ext.Computer|Warm-up via Keeyboard ")             
@@ -668,10 +668,10 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
 
        
        '''Process Status Words'''
-       sw1 = self.get("sw.statusWord1")
-       sw1Bin = "{0:08b}".format(sw1)
+       sw1 = self.get("sw.statusWord1") #this is integer
+       sw1Bin = "{0:08b}".format(sw1) #this is string
        self.set("sw.statusWord1Bin",sw1Bin)
-       if (sw1Bin & 32):
+       if (sw1 & 64): #check High Voltage Status
            self.set("highVoltageStatus","On")
        else:
            self.set("highVoltageStatus","Off")
