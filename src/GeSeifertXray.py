@@ -461,13 +461,222 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
                 .unit(Unit.HERTZ)
                 .readOnly()                 
                 .commit(),         
-
-        STRING_ELEMENT(expected).key("highVoltageStatus")
-                .displayedName("High Voltage Status")
-                .description("High Voltage Status: On | Off depending on bit 6 of Status Word 1")
+    
+        # Status Word 1        
+        STRING_ELEMENT(expected).key("extComputerControl")
+                .displayedName("Ext. Computer Control")
+                .description("Ext. Computer Control: ON | OFF")
                 .readOnly()
                 .commit(),
                 
+        STRING_ELEMENT(expected).key("highVoltageStatus")
+                .displayedName("High Voltage")
+                .description("High Voltage: ON | OFF")
+                .readOnly()
+                .commit(),
+         
+        STRING_ELEMENT(expected).key("coolingCircuit")
+                .displayedName("Cooling Circuit")
+                .description("Cooling Circuit: OK | NOT OK")
+                .readOnly()
+                .commit(),  
+                
+        STRING_ELEMENT(expected).key("bufferBattery")
+                .displayedName("Buffer Battery")
+                .description("Buffer Battery: OK | EMPTY")
+                .readOnly()
+                .commit(),
+         
+        STRING_ELEMENT(expected).key("mANomActual")
+                .displayedName("mA Nom=Actual")
+                .description("mA Nom=Actual: OK | NOT OK")
+                .readOnly()
+                .commit(),        
+        
+        STRING_ELEMENT(expected).key("kVNomActual")
+                .displayedName("kV Nom=Actual")
+                .description("kV Nom=Actual: OK | NOT OK")
+                .readOnly()
+                .commit(),         
+                
+        STRING_ELEMENT(expected).key("shutterStatus")
+                .displayedName("Shutter Status")
+                .description("Shutter Status: OK | NOT OK")
+                .readOnly()
+                .commit(),                      
+        
+        # Status Word 2
+        STRING_ELEMENT(expected).key("timer1")
+                .displayedName("Timer 1")
+                .description("Timer 1: ON | OFF")
+                .readOnly()
+                .commit(),
+          
+        STRING_ELEMENT(expected).key("timer2")
+                .displayedName("Timer 2")
+                .description("Timer 2: ON | OFF")
+                .readOnly()
+                .commit(),        
+        
+        STRING_ELEMENT(expected).key("timer3")
+                .displayedName("Timer 3")
+                .description("Timer 3: ON | OFF")
+                .readOnly()
+                .commit(),
+                
+        STRING_ELEMENT(expected).key("timer4")
+                .displayedName("Timer 4")
+                .description("Timer 4: ON | OFF")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutterControl1")
+                .displayedName("Shutter Control 1")
+                .description("Shutter Control 1: MANUAL | COMPUTER")
+                .readOnly()
+                .commit(),
+                
+        STRING_ELEMENT(expected).key("shutterControl2")
+                .displayedName("Shutter Control 2")
+                .description("Shutter Control 2: MANUAL | COMPUTER")
+                .readOnly()
+                .commit(),
+                
+        STRING_ELEMENT(expected).key("shutterControl3")
+                .displayedName("Shutter Control 3")
+                .description("Shutter Control 3: MANUAL | COMPUTER")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutterControl4")
+                .displayedName("Shutter Control 4")
+                .description("Shutter Control 4: MANUAL | COMPUTER")
+                .readOnly()
+                .commit(),
+        
+        # Status Word 3
+        STRING_ELEMENT(expected).key("shutter1Command")
+                .displayedName("Shutter 1 Command")
+                .description("Shutter 1 Command: OPEN | CLOSED")
+                .readOnly()
+                .commit(),
+        
+        STRING_ELEMENT(expected).key("shutter1Status")
+                .displayedName("Shutter 1 Status")
+                .description("Shutter 1 Status: OPEN | CLOSED")
+                .readOnly()
+                .commit(),  
+        
+        STRING_ELEMENT(expected).key("shutter1NonSysClosed")
+                .displayedName("Shutter 1 Non-Systematically Closed")
+                .description("Shutter 1 Non-Systematically Closed: YES | NO")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutter1Connected")
+                .displayedName("Shutter 1 Connected")
+                .description("Shutter 1 Connected: YES | NO")
+                .readOnly()
+                .commit(),  
+                
+        STRING_ELEMENT(expected).key("shutter2Command")
+                .displayedName("Shutter 2 Command")
+                .description("Shutter 2 Command: OPEN | CLOSED")
+                .readOnly()
+                .commit(),
+        
+        STRING_ELEMENT(expected).key("shutter2Status")
+                .displayedName("Shutter 2 Status")
+                .description("Shutter 2 Status: OPEN | CLOSED")
+                .readOnly()
+                .commit(),  
+        
+        STRING_ELEMENT(expected).key("shutter2NonSysClosed")
+                .displayedName("Shutter 2 Non-Systematically Closed")
+                .description("Shutter 2 Non-Systematically Closed: YES | NO")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutter2Connected")
+                .displayedName("Shutter 2 Connected")
+                .description("Shutter 2 Connected: YES | NO")
+                .readOnly()
+                .commit(),        
+        
+        # Status Word 4
+        STRING_ELEMENT(expected).key("shutter3Command")
+                .displayedName("Shutter 3 Command")
+                .description("Shutter 3 Command: OPEN | CLOSED")
+                .readOnly()
+                .commit(),
+        
+        STRING_ELEMENT(expected).key("shutter3Status")
+                .displayedName("Shutter 3 Status")
+                .description("Shutter 3 Status: OPEN | CLOSED")
+                .readOnly()
+                .commit(),  
+        
+        STRING_ELEMENT(expected).key("shutter3NonSysClosed")
+                .displayedName("Shutter 3 Non-Systematically Closed")
+                .description("Shutter 3 Non-Systematically Closed: YES | NO")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutter3Connected")
+                .displayedName("Shutter 3 Connected")
+                .description("Shutter 3 Connected: YES | NO")
+                .readOnly()
+                .commit(),  
+                
+        STRING_ELEMENT(expected).key("shutter4Command")
+                .displayedName("Shutter 4 Command")
+                .description("Shutter 4 Command: OPEN | CLOSED")
+                .readOnly()
+                .commit(),
+        
+        STRING_ELEMENT(expected).key("shutter4Status")
+                .displayedName("Shutter 4 Status")
+                .description("Shutter 4 Status: OPEN | CLOSED")
+                .readOnly()
+                .commit(),  
+        
+        STRING_ELEMENT(expected).key("shutter4NonSysClosed")
+                .displayedName("Shutter 4 Non-Systematically Closed")
+                .description("Shutter 4 Non-Systematically Closed: YES | NO")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("shutter4Connected")
+                .displayedName("Shutter 4 Connected")
+                .description("Shutter 4 Connected: YES | NO")
+                .readOnly()
+                .commit(),
+        
+        # Status Word 6
+        STRING_ELEMENT(expected).key("warmupProgram")
+                .displayedName("Warm-Up Program")
+                .description("Warm-Up Program: ACTIVE | NOT ACTIVE")
+                .readOnly()
+                .commit(),
+                
+        STRING_ELEMENT(expected).key("warmupAborted")
+                .displayedName("Warm-Up Aborted")
+                .description("Warm-Up Program: YES | NO")
+                .readOnly()
+                .commit(), 
+                
+        STRING_ELEMENT(expected).key("warmupExtComputer")
+                .displayedName("Warm-Up via External Computer")
+                .description("Warm-Up via External Computer: YES | NO")
+                .readOnly()
+                .commit(),  
+        
+        STRING_ELEMENT(expected).key("warmupKeyboard")
+                .displayedName("Warm-Up via Keyboard")
+                .description("Warm-Up via Keyboard: YES | NO")
+                .readOnly()
+                .commit(),        
+        
         # Warm-up program
         NODE_ELEMENT(expected).key("warmup")
                 .displayedName("Warm-up Program")
@@ -671,34 +880,199 @@ class GeSeifertXray(ScpiDevice2, ScpiOnOffFsm):
        sw1 = self.get("sw.statusWord1") #this is integer
        sw1Bin = "{0:08b}".format(sw1) #this is string
        self.set("sw.statusWord1Bin",sw1Bin)
-       if (sw1 & 64): #check High Voltage Status
-           self.set("highVoltageStatus","On")
+       
+       if (sw1 & 128):
+           self.set("extComputerControl","ON")
        else:
-           self.set("highVoltageStatus","Off")
+           self.set("extComputerControl","OFF")
+           
+       if (sw1 & 64):
+           self.set("highVoltageStatus","ON")
+       else:
+           self.set("highVoltageStatus","OFF")
+           
+       if (sw1 & 32): 
+           self.set("coolingCircuit","NOT OK")
+       else:
+           self.set("coolingCircuit","OK")  
+           
+       if (sw1 & 16): 
+           self.set("bufferBattery","EMPTY")
+       else:
+           self.set("bufferBattery","OK")
+           
+       if (sw1 & 8): 
+           self.set("mANomActual","NOT OK")
+       else:
+           self.set("mANomActual","OK")  
+           
+       if (sw1 & 4): 
+           self.set("kVNomActual","NOT OK")
+       else:
+           self.set("kVNomActual","OK")
+           
+       if (sw1 & 2): 
+           self.set("shutterStatus","NOT OK")
+       else:
+           self.set("shutterStatus","OK")
 
        sw2 = self.get("sw.statusWord2")
        sw2Bin = "{0:08b}".format(sw2)
        self.set("sw.statusWord2Bin",sw2Bin)
 
+       if (sw2 & 128):
+           self.set("timer1","ON")
+       else:
+           self.set("timer1","OFF")
+           
+       if (sw2 & 64):
+           self.set("timer2","ON")
+       else:
+           self.set("timer2","OFF")
+           
+       if (sw2 & 32): 
+           self.set("timer3","ON")
+       else:
+           self.set("timer3","OFF")  
+           
+       if (sw2 & 16): 
+           self.set("timer4","ON")
+       else:
+           self.set("timer4","OFF")
+           
+       if (sw2 & 8): 
+           self.set("shutterControl1","COMPUTER")
+       else:
+           self.set("shutterControl1","MANUAL")  
+           
+       if (sw2 & 4): 
+           self.set("shutterControl2","COMPUTER")
+       else:
+           self.set("shutterControl2","MANUAL")
+           
+       if (sw2 & 2): 
+           self.set("shutterControl3","COMPUTER")
+       else:
+           self.set("shutterControl3","MANUAL")
+           
+       if (sw2 & 1): 
+           self.set("shutterControl4","COMPUTER")
+       else:
+           self.set("shutterControl4","MANUAL")    
+
        sw3 = self.get("sw.statusWord3")
        sw3Bin = "{0:08b}".format(sw3)
        self.set("sw.statusWord3Bin",sw3Bin)
 
+       if (sw3 & 128):
+           self.set("shutter1Command","OPEN")
+       else:
+           self.set("shutter1Command","CLOSED")
+           
+       if (sw3 & 64):
+           self.set("shutter1Status","OPEN")
+       else:
+           self.set("shutter1Status","CLOSED")
+           
+       if (sw3 & 32): 
+           self.set("shutter1NonSysClosed","YES")
+       else:
+           self.set("shutter1NonSysClosed","NO")  
+           
+       if (sw3 & 16): 
+           self.set("shutter1Connected","NO")
+       else:
+           self.set("shutter1Connected","YES")
+           
+       if (sw3 & 8): 
+           self.set("shutter2Command","OPEN")
+       else:
+           self.set("shutter2Command","CLOSED")  
+           
+       if (sw3 & 4): 
+           self.set("shutter2Status","OPEN")
+       else:
+           self.set("shutter2Status","CLOSED")
+           
+       if (sw3 & 2): 
+           self.set("shutter2NonSysClosed","YES")
+       else:
+           self.set("shutter2NonSysClosed","NO")
+           
+       if (sw3 & 1): 
+           self.set("shutter2Connected","NO")
+       else:
+           self.set("shutter2Connected","YES")
+       
        sw4 = self.get("sw.statusWord4")
        sw4Bin = "{0:08b}".format(sw4)
        self.set("sw.statusWord4Bin",sw4Bin)
        
-       BeamShutterStatus = sw4 & 0b01000000 # Check Bit6 "Shutter 3 Status" and set the string
-       if BeamShutterStatus > 0:
-           text = "Open"
-           self.set("beamshutter.status",text)
+       if (sw4 & 128):
+           self.set("shutter3Command","OPEN")
        else:
-           text = "Closed"
-           self.set("beamshutter.status",text)                      
-       
+           self.set("shutter3Command","CLOSED")
+           
+       if (sw4 & 64):
+           self.set("shutter3Status","OPEN")
+           self.set("beamshutter.status","Open") # because ot was already used
+       else:
+           self.set("shutter3Status","CLOSED")
+           self.set("beamshutter.status","Closed") # because ot was already used
+           
+       if (sw4 & 32): 
+           self.set("shutter3NonSysClosed","YES")
+       else:
+           self.set("shutter3NonSysClosed","NO")  
+           
+       if (sw4 & 16): 
+           self.set("shutter3Connected","NO")
+       else:
+           self.set("shutter3Connected","YES")
+           
+       if (sw4 & 8): 
+           self.set("shutter4Command","OPEN")
+       else:
+           self.set("shutter4Command","CLOSED")  
+           
+       if (sw4 & 4): 
+           self.set("shutter4Status","OPEN")
+       else:
+           self.set("shutter4Status","CLOSED")
+           
+       if (sw4 & 2): 
+           self.set("shutter4NonSysClosed","YES")
+       else:
+           self.set("shutter4NonSysClosed","NO")
+           
+       if (sw4 & 1): 
+           self.set("shutter4Connected","NO")
+       else:
+           self.set("shutter4Connected","YES")
+                                   
        sw6 = self.get("sw.statusWord6")
        sw6Bin = "{0:08b}".format(sw6)
        self.set("sw.statusWord6Bin",sw6Bin)
+       
+       if (sw6 & 8): 
+           self.set("warmupProgram","ACTIVE")
+       else:
+           self.set("warmupProgram","NOT ACTIVE")  
+           
+       if (sw6 & 4): 
+           self.set("warmupAborted","YES")
+       else:
+           self.set("warmupAborted","NO")
+           
+       if (sw6 & 2): 
+           self.set("warmupExtComputer","YES")
+       else:
+           self.set("warmupExtComputer","NO")
+           
+       if (sw6 & 1): 
+           self.set("warmupKeyboard","YES")
+       else:
+           self.set("warmupKeyboard","NO")
        
        ### Display Status Word 12 message ###
        msgIdx = self.get("statusMassage.statusWord12")
