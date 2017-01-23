@@ -1,2 +1,2 @@
-# type		category	package		tag
-dependency	dependencies	scpi		branches/1.0-1.3
+#package, tag
+scpi, 1.0-1.3
